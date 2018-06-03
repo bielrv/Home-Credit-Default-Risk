@@ -1,4 +1,8 @@
 /zips/
 /data/
+<<<<<<< HEAD
 /env/
 .ipynb_checkpoints
+=======
+/input/
+>>>>>>> 3e14323472bb10777a058e1080933ac3cd768f29
