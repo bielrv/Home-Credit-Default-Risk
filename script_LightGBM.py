@@ -1,9 +1,10 @@
+
 import pandas as pd
 # pandas is a library for data manipulation and analysis. It offers data structures and operations for manipulating numerical tables and time series
 
 import numpy as np
 # numpy adds support for large, multi-dimensional arrays and matrices, along with a large collection of high-level mathematical functions to operate on these arrays
-
+..
 from sklearn.metrics import roc_auc_score, precision_recall_curve, roc_curve
 # sklearn features various classification, regression and clustering algorithms including support vector machines
 # sklearn.metrics module includes score functions, performance metrics and pairwise metrics and distance computations
@@ -82,7 +83,7 @@ del buro_bal
 # reclaim all memory that is inaccessible
 gc.collect()
 # With no arguments, run a full collection.
-# In computer science, garbage collection (GC) is a form of automatic memory management. 
+# In computer science, garbage collection (GC) is a form of automatic memory management.
 # The garbage collector, or just collector, attempts to reclaim garbage, or memory occupied by objects that are no longer in use by the program
 
 avg_buro_bal.columns
@@ -92,7 +93,7 @@ avg_buro_bal.columns
 #-------------------------------------
 
 print('Read Bureau')
-# load bureau.csv 
+# load bureau.csv
 buro = pd.read_csv('../input/bureau.csv')
 
 
@@ -136,7 +137,7 @@ nb_bureau_per_curr = buro_full[['SK_ID_CURR', 'SK_ID_BUREAU']].groupby('SK_ID_CU
 buro_full['SK_ID_BUREAU'] = buro_full['SK_ID_CURR'].map(nb_bureau_per_curr['SK_ID_BUREAU'])
 
 print('Averaging bureau')
-# Groups by current loan calculating mean 
+# Groups by current loan calculating mean
 avg_buro = buro_full.groupby('SK_ID_CURR').mean()
 print(avg_buro.head())
 
@@ -174,7 +175,7 @@ len(prev_dum.columns) # 143 colummns
 # prev.head(5)
 # prev_dum.head(5)
 
-# concatante prev_dum 
+# concatante prev_dum
 prev = pd.concat([prev, prev_dum], axis=1)
 
 # len(prev.columns) # 180 columns
@@ -321,7 +322,7 @@ for f_ in categorical_feats:
 
     test[f_] = indexer.get_indexer(test[f_])
 # Compute indexer and mask for new index given the current index. The indexer should be then used as an input to ndarray.take to align the current data to the new index.
-    
+
 # 1. Append aggregated buro data from avg_buro df
 data = data.merge(right=avg_buro.reset_index(), how='left', on='SK_ID_CURR')
 test = test.merge(right=avg_buro.reset_index(), how='left', on='SK_ID_CURR')
@@ -345,13 +346,13 @@ test = test.merge(right=avg_inst.reset_index(), how='left', on='SK_ID_CURR')
 import gc
 gc.enable()
 
-# delete auxiliary tables avg_buro, avg_prev 
+# delete auxiliary tables avg_buro, avg_prev
 del avg_buro, avg_prev
 # reclaim all memory that is inaccessible
 gc.collect()
 
 from lightgbm import LGBMClassifier
-# A fast, distributed, high performance gradient boosting (GBDT, GBRT, GBM or MART) framework based on decision tree algorithms  
+# A fast, distributed, high performance gradient boosting (GBDT, GBRT, GBM or MART) framework based on decision tree algorithms
 # used for ranking classification and many other machine learning tasks. It is under the umbrella of the DMTK
 
 # KFold(n_splits=3, shuffle=False, random_state=None)
@@ -370,7 +371,7 @@ sub_preds = np.zeros(test.shape[0])
 # create feature_importance_df dataframe
 feature_importance_df = pd.DataFrame()
 
-# create feats serie containing all features 
+# create feats serie containing all features
 feats = [f for f in data.columns if f not in ['SK_ID_CURR']]
 
 # enumarate is a built-in function of Python which allows us to loop over something and have an automatic counter
@@ -379,7 +380,7 @@ for n_fold, (trn_idx, val_idx) in enumerate(folds.split(data)):
     trn_x, trn_y = data[feats].iloc[trn_idx], y.iloc[trn_idx]
     val_x, val_y = data[feats].iloc[val_idx], y.iloc[val_idx]
 
-# Light GBM is a gradient boosting framework that uses tree based learning algorithm. 
+# Light GBM is a gradient boosting framework that uses tree based learning algorithm.
     clf = LGBMClassifier(
         # n_estimators=1000,
         # num_leaves=20,
@@ -402,28 +403,28 @@ for n_fold, (trn_idx, val_idx) in enumerate(folds.split(data)):
         silent=-1,
         verbose=-1,
     )
-    
+
     #  train clasifier
-    clf.fit(trn_x, trn_y, 
-            eval_set= [(trn_x, trn_y), (val_x, val_y)], 
+    clf.fit(trn_x, trn_y,
+            eval_set= [(trn_x, trn_y), (val_x, val_y)],
             eval_metric='auc', verbose=100, early_stopping_rounds=100  #30
            )
-    
+
     oof_preds[val_idx] = clf.predict_proba(val_x, num_iteration=clf.best_iteration_)[:, 1]
-    
+
     sub_preds += clf.predict_proba(test[feats], num_iteration=clf.best_iteration_)[:, 1] / folds.n_splits
-    
+
     fold_importance_df = pd.DataFrame()
     fold_importance_df["feature"] = feats
     fold_importance_df["importance"] = clf.feature_importances_
     fold_importance_df["fold"] = n_fold + 1
     feature_importance_df = pd.concat([feature_importance_df, fold_importance_df], axis=0)
-    
+
     print('Fold %2d AUC : %.6f' % (n_fold + 1, roc_auc_score(val_y, oof_preds[val_idx])))
     del clf, trn_x, trn_y, val_x, val_y
     gc.collect()
-    
-print('Full AUC score %.6f' % roc_auc_score(y, oof_preds)) 
+
+print('Full AUC score %.6f' % roc_auc_score(y, oof_preds))
 
 test['TARGET'] = sub_preds
 
@@ -443,8 +444,8 @@ plt.savefig('lgbm_importances.png')
 
 # Plot ROC curves
 plt.figure(figsize=(6,6))
-scores = [] 
-for n_fold, (_, val_idx) in enumerate(folds.split(data)):  
+scores = []
+for n_fold, (_, val_idx) in enumerate(folds.split(data)):
     # Plot the roc curve
     fpr, tpr, thresholds = roc_curve(y.iloc[val_idx], oof_preds[val_idx])
     score = roc_auc_score(y.iloc[val_idx], oof_preds[val_idx])
@@ -485,4 +486,3 @@ plt.legend(loc="best")
 plt.tight_layout()
 
 plt.savefig('recall_precision_curve.png')
-
